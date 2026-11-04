@@ -1,4 +1,5 @@
 import os
+import logging
 
 from queue import Queue
 from dotenv import load_dotenv
@@ -11,12 +12,18 @@ from plugins.search_plugin.search_plugin import SearchPlugin
 from listeners.sms_listener.sms_listener import SMSListener
 from parsers.default_parser.default_parser import DefaultParser
 from tooling.default_tooling.default_tooling import DefaultTooling
+from loggers.default_logger.default_logger import DefaultLogger
 
 
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
+
+logger = DefaultLogger()
+
 load_dotenv()
+logging.info('Loaded .env variables')
 
 
+logger.info('Loading plugins')
 
 allowed_shell_commands = [
     'ls',
@@ -28,7 +35,9 @@ allowed_shell_commands = [
     'fastfetch',
     'inxi',
     'free',
-    'df'
+    'df',
+    'cat',
+    'find',
 ]
 
 shell_plugin = ShellPlugin(
@@ -44,18 +53,13 @@ search_plugin = SearchPlugin(
 base_url = 'https://integrate.api.nvidia.com/v1'
 model = 'z-ai/glm-5.3-flash'
 
-reasoning = 'high'
+reasoning = 'medium'
 chat_save_folder = './chats'
 with open('./system_messages/test_msg.txt') as f:
     system_message = f.read()
 max_tokens = 4096
 
 available_reasoning = ['none', 'low', 'medium', 'high']
-
-# tool_messages = [
-#     'Here are tools:',
-#     'use them in json with {"tool_name": {"args": "tool_args", "callback": bool}, "tool_name"....} reply only in json. The callback is for whether you want the output of the tool call to be returned back to you. You can use as many tools as you want.'
-# ]
 
 llm_plugin = LLMPlugin(
     base_url=base_url,
@@ -77,13 +81,9 @@ plugins: list[Plugin] = [llm_plugin, shell_plugin, search_plugin, vt_plugin]
 max_depth = 5
 tooling = DefaultTooling(plugins, max_depth)
 
+llm_plugin.set_available_tools(tooling.tools)
+
 parser = DefaultParser(plugins=plugins, tooling=tooling)
-
-tools = {}
-for plugin in plugins:
-    tools.update(plugin.get_tools())
-llm_plugin.set_available_tools(tools)
-
 
 sms_queue = Queue()
 listener = SMSListener(data_queue=sms_queue)
