@@ -5,6 +5,7 @@ from queue import Queue
 from dotenv import load_dotenv
 
 from plugins.plugin import Plugin
+from plugins.vt_plugin.vt_plugin import VTPlugin
 from plugins.llm_plugin.llm_plugin import LLMPlugin
 from plugins.shell_plugin.shell_plugin import ShellPlugin
 from plugins.search_plugin.search_plugin import SearchPlugin
@@ -12,6 +13,7 @@ from listeners.sms_listener.sms_listener import SMSListener
 from parsers.default_parser.default_parser import DefaultParser
 from tooling.default_tooling.default_tooling import DefaultTooling
 from loggers.default_logger.default_logger import DefaultLogger
+
 
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
@@ -49,7 +51,7 @@ search_plugin = SearchPlugin(
 
 
 base_url = 'https://integrate.api.nvidia.com/v1'
-model = 'z-ai/glm-5.3'
+model = 'z-ai/glm-5.3-flash'
 
 reasoning = 'medium'
 chat_save_folder = './chats'
@@ -70,8 +72,11 @@ llm_plugin = LLMPlugin(
     available_tools = {}
 )
 
+vt_plugin = VTPlugin()
+plugins: list[Plugin] = [llm_plugin, shell_plugin, search_plugin, vt_plugin]
 
-plugins: list[Plugin] = [llm_plugin, shell_plugin, search_plugin]
+
+plugins: list[Plugin] = [llm_plugin, shell_plugin, search_plugin, vt_plugin]
 
 max_depth = 5
 tooling = DefaultTooling(plugins, max_depth)
